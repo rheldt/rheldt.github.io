@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DevURLs++ — Developer News Aggregator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-brand">
+      <span class="site-title">DevURLs++</span>
+      <span class="site-tagline">Developer News Aggregator</span>
+    </div>
+    <div class="header-controls">
+      <span id="last-refresh"></span>
+      <button id="refresh-btn" title="Refresh all feeds">
+        <span class="btn-icon">↻</span> Refresh
+      </button>
+    </div>
+  </header>
+  <main id="grid"></main>
+  <footer class="site-footer">
+    Auto-refreshes every 15 minutes
+  </footer>
+  <script src="feeds.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
