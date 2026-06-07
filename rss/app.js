@@ -1,4 +1,4 @@
-const PROXY = "https://rss-dashboard-server.vercel.app:3000/proxy?url=";
+const PROXY = "https://rss-dashboard-server.vercel.app/proxy?url=";
 const ITEMS_PER_FEED = 12;
 const REFRESH_MS = 15 * 60 * 1000; // 15 minutes
 
