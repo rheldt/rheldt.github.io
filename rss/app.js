@@ -87,10 +87,7 @@ function parseRSS(xml) {
 
 async function fetchFeed(url) {
     const res = await fetch(`${PROXY}${encodeURIComponent(url)}`, {
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST,PATCH,OPTIONS"
-        },
+        mode: "cors",
         signal: AbortSignal.timeout(12000)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
