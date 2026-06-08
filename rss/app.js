@@ -1,6 +1,7 @@
-const PROXY = "https://rss-dashboard-server.vercel.app/proxy?url=";
 const ITEMS_PER_FEED = 12;
 const REFRESH_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL_MS = 15 * 60 * 1000;
+const CACHE_PREFIX = "devurls-cache:v1:";
 
 // --------------------
 // Time/date formatting
@@ -85,21 +86,44 @@ function parseRSS(xml) {
 // Network
 // -------
 
+function cacheKey(url) {
+    return `${CACHE_PREFIX}${url}`;
+}
+
+function readCache(url) {
+    try {
+        const raw = localStorage.getItem(cacheKey(url));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.articles) || typeof parsed.savedAt !== "number") return null;
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+function writeCache(url, articles) {
+    try {
+        localStorage.setItem(cacheKey(url), JSON.stringify({
+            savedAt: Date.now(),
+            articles
+        }));
+    } catch {
+        // Ignore quota and storage failures.
+    }
+}
+
 async function fetchFeed(url) {
-    const res = await fetch(`${PROXY}${encodeURIComponent(url)}`, {
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST,PATCH,OPTIONS"
-        },
+    const res = await fetch(url, {
         mode: "cors",
         signal: AbortSignal.timeout(10000) // 10 seconds
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const {
-        contents
-    } = await res.json();
+    const contents = await res.text();
     if (!contents) throw new Error("Empty response");
-    return parseRSS(contents);
+    const articles = parseRSS(contents);
+    writeCache(url, articles);
+    return articles;
 }
 
 // -----------
@@ -177,9 +201,23 @@ function errorCard(card, msg) {
 
 async function loadCard(feed, card) {
     try {
+        const cached = readCache(feed.url);
+        if (cached && Date.now() - cached.savedAt < CACHE_TTL_MS) {
+            fillCard(card, cached.articles);
+            return;
+        }
+
         const articles = await fetchFeed(feed.url);
         fillCard(card, articles);
     } catch (err) {
+        const cached = readCache(feed.url);
+        if (cached?.articles?.length) {
+            fillCard(card, cached.articles);
+            card.querySelector(".feed-meta").className = "feed-meta error";
+            card.querySelector(".feed-meta").textContent = "cached";
+            return;
+        }
+
         errorCard(card, err.message);
     }
 }
